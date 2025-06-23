@@ -1,4 +1,4 @@
-# Chatty GPT
+# ChattyGPT
 
 ChattyGPT is a clone of ChatGPT that run fully locally with OpenSource models like Ollama.
 
