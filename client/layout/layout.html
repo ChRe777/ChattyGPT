@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#000000" />
+        <meta name="description" content="Web site created using create-react-app" />
+        <link rel="stylesheet" href="./css/dist/spectre.min.css" />
+        <link rel="stylesheet" href="./css/dist/spectre-exp.min.css" />
+        <link rel="stylesheet" href="./css/dist/spectre-icons.min.css" />
+        <!--
+      manifest.json provides metadata used when your web app is installed on a
+      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
+    -->
+        <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+        <!--
+      Notice the use of %PUBLIC_URL% in the tags above.
+      It will be replaced with the URL of the `public` folder during the build.
+      Only files inside the `public` folder can be referenced from the HTML.
+
+      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
+      work correctly both with client-side routing and a non-root public URL.
+      Learn how to configure a non-root public URL by running `npm run build`.
+    -->
+        <title>React App</title>
+        <style>
+            html,
+            body,
+            #root {
+                height: 100vh;
+            }
+
+            #root {
+                background-color: #fff;
+            }
+
+            .box-parent {
+                flex-direction: column;
+                height: 100vh;
+                display: flex;
+            }
+
+            .box-output {
+                flex: 1;
+                background-color: #fff;
+                margin-bottom: 5px;
+                margin-top: 5px;
+                padding: 0.35em;
+                border-radius: 1em;
+                border: 1px solid #eee;
+            }
+
+            .box-input {
+                flex: 0;
+                background-color: #fff;
+                border: 1px solid #eee;
+                padding: 0.35em;
+                border-radius: 1em;
+                display: flex;
+                flex-direction: column;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+                justify-content: space-between;
+                margin-bottom: 5px;
+            }
+
+            .input {
+                width: 100%;
+                border: 0;
+                outline: none;
+                white-space: normal; /* allows wrapping */
+                word-wrap: break-word; /* breaks long words if needed */
+                overflow-wrap: anywhere; /* allows breaking anywhere if needed */
+
+                min-height: 2rem;
+                max-height: 20rem;
+                height: auto;
+                overflow: hidden;
+                resize: none;
+            }
+
+            .toolbar-input {
+                margin-top: 10px;
+                flex: 0;
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+            }
+
+            .border-r5 {
+                border-radius: 0.5em;
+            }
+        </style>
+    </head>
+    <body>
+        <noscript>You need to enable JavaScript to run this app.</noscript>
+        <div id="root">
+            <div class="container">
+                <div class="column col-6 col-mx-auto box-parent">
+                    <div class="box-output">Output</div>
+                    <div class="box-input bg-white">
+                        <div>
+                            <button class="btn btn-primary border-r5 w-50">
+                                Lebenslauf.pdf&nbsp;&nbsp;<i class="icon icon-delete"></i>
+                            </button>
+                        </div>
+
+                        <textarea class="input" type="text" placeholder="Type a text here ..."></textarea>
+                        <div class="toolbar-input">
+                            <div>
+                                <button class="btn btn-action btn-primary s-circle">
+                                    <i class="icon icon-plus"></i>
+                                </button>
+                                <button class="btn btn-action btn-primary s-circle">
+                                    <i class="icon icon-delete"></i>
+                                </button>
+                            </div>
+                            <div>
+                                <button class="btn btn-action btn-primary s-circle">
+                                    <i class="icon icon-upward"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,42 @@
+.app-layout {
+    height: 100vh;
+    min-height: 100vh;
+    max-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.header {
+    background-color: transparent;
+    border: 0px dashed limegreen;
+    width: 100%;
+}
+
+.stick-top {
+    position: absolute;
+    top: 0px;
+    z-index: 1000;
+}
+
+.main {
+    flex: 1;
+    padding-left: 20%;
+    padding-right: 20%;
+    overflow-y: scroll;
+    padding-top: 26px;
+}
+
+.footer {
+    flex: 0;
+    padding-left: 20%;
+    padding-right: 20%;
+}
+
+.navbar-layer {
+    position: relative;
+    top: 0;
+    z-index: 1000;
+    backdrop-filter: blur(6px);
+    background: rgba(255, 255, 255, 0.05); /* very transparent */
+}

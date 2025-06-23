@@ -1,0 +1,28 @@
+.chat-message {
+    white-space: pre-wrap; /* preserves line breaks and spaces */
+    /*font-family: monospace; /* monospaced font like <pre> */
+    word-wrap: break-word; /* breaks long words */
+}
+
+.chat-messages {
+    overflow-y: auto;
+}
+
+.bot-message {
+    color: black;
+    border: 0px dashed lightblue;
+}
+
+.user-message-right {
+    display: flex;
+    justify-content: flex-end;
+    border: 0px dashed lightgray;
+}
+
+.user-message {
+    border-radius: 2em;
+    padding: 1em;
+    background-color: rgb(244, 244, 244);
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
