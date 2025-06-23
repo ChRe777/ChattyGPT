@@ -2,11 +2,11 @@
 
 ChattyGPT is a clone of ChatGPT that run fully locally with OpenSource models like Ollama.
 
+![ChattyGPT Logo](ChattyGPT.webp)
+
 ## Features
 
-* MultiChat
-* Textfile Upload
-* Stop longrun answers
-* ...
+* MultiChat with Ollama
+* Upload of text files as context
 
-![ChattyGPT Logo](ChattyGPT.webp)
+
