@@ -8,3 +8,5 @@ ChattyGPT is a clone of ChatGPT that run fully locally with OpenSource models li
 * Textfile Upload
 * Stop longrun answers
 * ...
+
+![ChattyGPT Logo](ChattyGPT.webp)
