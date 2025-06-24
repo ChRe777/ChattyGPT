@@ -39,9 +39,10 @@ def generate():
 @app.route('/api/chat', methods=['POST'])
 def chat():
 
-    messages = request.json.get("messages", [])
-    model = request.json.get("model", MODEL)
-    stream = request.json.get("stream", True)
+    data = request.json or {}
+    messages = data.get("messages", [])
+    model = data.get("model", MODEL)
+    stream = data.get("stream", True)
 
     def generate():
         payload = {
@@ -219,9 +220,11 @@ data: {"model": "llama3.2", "created_at": "2025-06-23T11:43:16.166643Z", "messag
 
 @app.route('/api/chat2', methods=['POST'])
 def chat2():
-    messages = request.json.get("messages", [])
-    model = request.json.get("model", MODEL)
-    stream = request.json.get("stream", True)
+
+    data = request.json or {}
+    messages = data.get("messages", [])
+    model = data.get("model", MODEL)
+    stream = data.get("stream", True)
 
     payload = {
         "model": model,
@@ -314,9 +317,11 @@ curl http://localhost:5050/api/docs \
 """
 @app.route('/api/docs', methods=['POST'])
 def docs():
-    embeddings = request.json.get("embeddings", [])
-    documents = request.json.get("documents", [])
-    ids = request.json.get("ids", [])
+
+    data = request.json or {}
+    embeddings = data.get("embeddings", [])
+    documents = data.get("documents", [])
+    ids = data.get("ids", [])
 
     collection.add(documents=documents, ids=ids, embeddings=embeddings)
 
@@ -334,9 +339,12 @@ curl http://localhost:5050/api/docs/query \
 
 @app.route('/api/docs/query', methods=['POST'])
 def docs_():
-    query = request.json.get("query", [])
-    documents = getDocs(query)
-    return jsonify({"documents": documents}), 200
+    data = request.json or {}
+    query = data.get("query", [])
+
+    results = getDocs(query)
+
+    return jsonify(results), 200
 
 if __name__ == '__main__':
     app.run(port=5050, debug=True)

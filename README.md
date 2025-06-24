@@ -10,8 +10,8 @@ ChattyGPT is a clone of ChatGPT that run *fully locally* with OpenSource models 
 
 ## Libs
 
-* Client in React, JavaScript, Spectre.css
-* Server in Flask, Python
+* Client in React, Zustand, Spectre.css
+* Server in Flask, Python, Ollama
 
 ![ChattyGPT Video](ChattyGPT.webp)
 

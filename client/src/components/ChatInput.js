@@ -22,98 +22,101 @@ import { queryDocs } from "actions/getDocs";
 // Component
 //
 function ChatInput() {
-  // State
-  //
-  const {
-    addUserMessage,
-    addAssistantMessage,
-    appendToLastMessage,
-    messages,
-    texts,
-    isAnswering,
-    setIsAnswering,
-    setText,
-  } = useChatMessageStore();
-  const [stopAnswering, setStopAnswering] = useState(false);
+    // State
+    //
+    const {
+        addUserMessage,
+        addAssistantMessage,
+        appendToLastMessage,
+        messages,
+        texts,
+        isAnswering,
+        setIsAnswering,
+        setText,
+    } = useChatMessageStore();
+    const [stopAnswering, setStopAnswering] = useState(false);
 
-  // Functions
-  //
-  const stopRef = useRef(false); // 🧠 this tracks the real-time value
+    // Functions
+    //
+    const stopRef = useRef(false); // 🧠 this tracks the real-time value
 
-  // Keep ref in sync with state
-  useEffect(() => {
-    stopRef.current = stopAnswering;
-  }, [stopAnswering]);
+    // Keep ref in sync with state
+    useEffect(() => {
+        stopRef.current = stopAnswering;
+    }, [stopAnswering]);
 
-  // Always returns the latest value
-  const shouldStopFn = () => stopRef.current;
+    // Always returns the latest value
+    const shouldStopFn = () => stopRef.current;
 
-  // Actions
-  //
-  const doSubmit = async (query) => {
-    if (query !== "" && isAnswering === false) {
-      setStopAnswering(false); // Reset stop flag
-      setText(""); // Reset text
+    // Actions
+    //
+    const doSubmit = async (query) => {
+        if (query !== "" && isAnswering === false) {
+            setStopAnswering(false); // Reset stop flag
+            setText(""); // Reset text
 
-      addUserMessage(query);
-      addAssistantMessage("");
+            addUserMessage(query);
+            addAssistantMessage("");
 
-      setIsAnswering(true);
+            setIsAnswering(true);
 
-      const messages_ = [...messages];
+            const messages_ = [...messages];
 
-      console.log("texts:", texts);
-      if (texts.length > 0) {
-        const context = texts
-          .map((doc) => `Filename: ${doc.filename}\nText:\n${doc.text.trim()}`)
-          .join("\n\n---\n\n");
-        messages_.push({
-          role: "system",
-          content: `You are a helpful assistant. Use the following context:\n\n${context}`,
-        });
-      }
+            console.log("texts:", texts);
+            if (texts.length > 0) {
+                const context = texts
+                    .map(
+                        (doc) =>
+                            `Filename: ${doc.filename}\nText:\n${doc.text.trim()}`,
+                    )
+                    .join("\n\n---\n\n");
+                messages_.push({
+                    role: "system",
+                    content: `You are a helpful assistant. Use the following context:\n\n${context}`,
+                });
+            }
 
-      const documents = await queryDocs(query);
+            const documents = await queryDocs(query);
 
-      console.log("Docs from Vector Store:", documents);
+            console.log("Docs from Vector Store:", documents);
 
-      if (documents.length > 0) {
-        const context = documents.join("\n\n");
-        messages_.push({
-          role: "system",
-          content: `You are a helpful assistant. Use only the following context:\n\n${context}`,
-        });
-      }
+            if (documents.length > 0) {
+                const context = documents.join("\n\n");
+                messages_.push({
+                    role: "system",
+                    content: `You are a helpful assistant. Use only the following context:\n\n${context}`,
+                });
+            }
 
-      messages_.push({ role: "user", content: query });
+            messages_.push({ role: "user", content: query });
 
-      await streamChat2(messages_, appendToLastMessage, shouldStopFn);
+            await streamChat2(messages_, appendToLastMessage, shouldStopFn);
 
-      setIsAnswering(false);
-    }
-  };
+            setIsAnswering(false);
+        }
+    };
 
-  const doStop = () => {
-    console.log("doStop called");
-    setStopAnswering(true);
-    setIsAnswering(false);
-  };
+    const doStop = () => {
+        console.log("doStop called");
+        setStopAnswering(true);
+        setIsAnswering(false);
+    };
 
-  return (
-    <div>
-      <div className="input-box">
-        <ChatInputFiles></ChatInputFiles>
-        <ChatInputText onSubmit={doSubmit} />
-        <ChatInputToolbar onSubmit={doSubmit} onStop={doStop} />
-      </div>
-      <center>
-        <small>
-          ChattyGPT kann Fehler machen. Überprüfe wichtige Informationen. Siehe
-          Cookie-Voreinstellungen.
-        </small>
-      </center>
-    </div>
-  );
+    return (
+        <div>
+            <div className="input-box">
+                <ChatInputFiles></ChatInputFiles>
+                <ChatInputText onSubmit={doSubmit} />
+                <ChatInputToolbar onSubmit={doSubmit} onStop={doStop} />
+            </div>
+            <center>
+                <small>
+                    ChattyGPT kann Fehler machen. Überprüfe wichtige
+                    Informationen. Siehe Cookie-Voreinstellungen.
+                </small>
+            </center>
+        </div>
+    );
 }
 
 export default ChatInput;
