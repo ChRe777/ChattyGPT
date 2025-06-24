@@ -17,6 +17,7 @@ import ChatInputText from 'components/ChatInput/ChatInputText';
 // Actions
 //
 import { streamChat2 } from 'actions/getAnswer';
+import { queryDocs } from 'actions/getDocs';
 
 // Component
 //
@@ -41,13 +42,13 @@ function ChatInput() {
 
     // Actions
     //
-    const doSubmit = async (userContent) => {
-        if (userContent !== '' && isAnswering === false) {
+    const doSubmit = async (query) => {
+        if (query !== '' && isAnswering === false) {
 
             setStopAnswering(false); // Reset stop flag
             setText('');             // Reset text
 
-            addUserMessage(userContent);
+            addUserMessage(query);
             addAssistantMessage('');
 
             setIsAnswering(true);
@@ -63,8 +64,20 @@ function ChatInput() {
                     { "role": "system", "content": `You are a helpful assistant. Use the following context:\n\n${context}` }
                 );
             }
+
+            const documents = await queryDocs(query);
+
+            console.log("docs:", documents)
+
+            if (documents.length > 0) {
+                const context = documents.join("\n\n");
+                messages_.push(
+                    { "role": "system", "content": `You are a helpful assistant. Use only the following context:\n\n${context}` }
+                );
+            }
+
             messages_.push(
-                { "role": "user", "content": userContent }
+                { "role": "user", "content": query }
             );
 
             await streamChat2(messages_, appendToLastMessage, shouldStopFn);

@@ -22,6 +22,11 @@ Here are the **main HTTP API endpoints** that Ollama serves at `http://localhost
   **`POST /api/embed`**
   Returns embeddings for multiple inputs. ([deepwiki.com][2])
 
+  curl http://localhost:11434/api/embed -d '{
+    "model": "llama3.2",
+    "input": "Llamas are members of the camelid family"
+  }'
+
 * \*\*Single embedding (legacy alias)\*\*
   **`POST /api/embeddings`**
   Similar to above, but for a single input request. ([deepwiki.com][2])

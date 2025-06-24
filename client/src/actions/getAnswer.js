@@ -120,7 +120,6 @@ export async function streamChat2(messages, onData, shouldStop) {
         },
         body: JSON.stringify({
             messages: messages,
-            //model: "llama3.2",
             stream: true
         })
     });

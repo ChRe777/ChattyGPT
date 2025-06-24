@@ -12,9 +12,10 @@ MODEL = "llama3.2"
 @app.route('/api/generate', methods=['POST'])
 def generate():
 
-    user_prompt = request.json.get("prompt", "")
-    model = request.json.get("model", MODEL)
-    stream = request.json.get("stream", True)
+    data = request.json or {}
+    user_prompt = data.get("prompt", "")
+    model = data.get("model", MODEL)
+    stream = data.get("stream", True)
 
     def generate():
         payload = {
@@ -265,6 +266,77 @@ def chat2():
             print("JSON parse error:", e)
             return jsonify({"error": "Failed to parse OLLAMA response"}), 500
 
+@app.route('/api/chat3', methods=['POST'])
+def chat3():
+
+    data = request.json or {}
+    messages = data.get("messages", [])
+    model = data.get("model", MODEL)
+    stream = data.get("stream", True)
+
+    from ollama import chat
+
+    stream = chat(
+        model=model,
+        messages=messages,
+        stream=stream,
+    )
+
+    def generate():
+        for chunk in stream:
+            print(chunk['message']['content'], end='', flush=True)
+            return chunk['message']['content']
+
+    return Response(generate(), mimetype='text/event-stream', headers={
+        'Cache-Control': 'no-cache',
+        'X-Accel-Buffering': 'no',
+        'Content-Type': 'text/event-stream',
+        'Connection': 'keep-alive',
+    })
+
+
+## ----------------------------------------------------------------------------
+
+import chromadb
+COLLECTION_NAME = "docs"
+
+client = chromadb.PersistentClient(path="./chroma_db")
+collection = client.get_collection(name=COLLECTION_NAME)
+
+"""
+curl http://localhost:5050/api/docs \
+  -H "Content-Type: application/json" \
+  -d '{
+    "embeddings": [],
+    "documents": [],
+    "ids": []
+  }'
+"""
+@app.route('/api/docs', methods=['POST'])
+def docs():
+    embeddings = request.json.get("embeddings", [])
+    documents = request.json.get("documents", [])
+    ids = request.json.get("ids", [])
+
+    collection.add(documents=documents, ids=ids, embeddings=embeddings)
+
+    return jsonify({"message": "docs added"}), 200
+
+from search import getDocs
+
+"""
+curl http://localhost:5050/api/docs/query \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "How much weight can a llama carry relative to its body weight?"
+  }'
+"""
+
+@app.route('/api/docs/query', methods=['POST'])
+def docs_():
+    query = request.json.get("query", [])
+    documents = getDocs(query)
+    return jsonify({"documents": documents}), 200
 
 if __name__ == '__main__':
     app.run(port=5050, debug=True)

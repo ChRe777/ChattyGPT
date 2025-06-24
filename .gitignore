@@ -8,6 +8,11 @@
 # testing
 /coverage
 
+# Cache
+__pycache__
+
+server/chroma_db/
+
 # production
 /build
 
