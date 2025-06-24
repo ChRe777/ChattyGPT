@@ -2,7 +2,7 @@
 
 ChattyGPT is a clone of ChatGPT that run *fully locally* with OpenSource models like Ollama.
 
-![ChattyGPT Logo](ChattyGPT.webp)
+![ChattyGPT Video](ChattyGPT.webp)
 
 ## Features
 
@@ -10,3 +10,5 @@ ChattyGPT is a clone of ChatGPT that run *fully locally* with OpenSource models 
 * Upload of text files as context
 * Client in React
 * Server in Flask
+
+![ChattyGPT Screen](Screen.png)
