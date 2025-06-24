@@ -1,109 +1,119 @@
-import './ChatInput.css';
+import "./ChatInput.css";
 
 // Libs
 //
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 
 // Store
 //
-import useChatMessageStore from 'stores/chatMessageStore';
+import useChatMessageStore from "stores/chatMessageStore";
 
 // Components
 //
-import ChatInputFiles from 'components/ChatInput/ChatInputFiles';
-import ChatInputToolbar from 'components/ChatInput/ChatInputToolbar';
-import ChatInputText from 'components/ChatInput/ChatInputText';
+import ChatInputFiles from "components/ChatInput/ChatInputFiles";
+import ChatInputToolbar from "components/ChatInput/ChatInputToolbar";
+import ChatInputText from "components/ChatInput/ChatInputText";
 
 // Actions
 //
-import { streamChat2 } from 'actions/getAnswer';
-import { queryDocs } from 'actions/getDocs';
+import { streamChat2 } from "actions/getAnswer";
+import { queryDocs } from "actions/getDocs";
 
 // Component
 //
 function ChatInput() {
+  // State
+  //
+  const {
+    addUserMessage,
+    addAssistantMessage,
+    appendToLastMessage,
+    messages,
+    texts,
+    isAnswering,
+    setIsAnswering,
+    setText,
+  } = useChatMessageStore();
+  const [stopAnswering, setStopAnswering] = useState(false);
 
-    // State
-    //
-    const { addUserMessage, addAssistantMessage, appendToLastMessage, messages, texts, isAnswering, setIsAnswering, setText } = useChatMessageStore();
-    const [stopAnswering, setStopAnswering] = useState(false);
+  // Functions
+  //
+  const stopRef = useRef(false); // 🧠 this tracks the real-time value
 
-    // Functions
-    //
-    const stopRef = useRef(false); // 🧠 this tracks the real-time value
+  // Keep ref in sync with state
+  useEffect(() => {
+    stopRef.current = stopAnswering;
+  }, [stopAnswering]);
 
-    // Keep ref in sync with state
-    useEffect(() => {
-        stopRef.current = stopAnswering;
-    }, [stopAnswering]);
+  // Always returns the latest value
+  const shouldStopFn = () => stopRef.current;
 
-    // Always returns the latest value
-    const shouldStopFn = () => stopRef.current;
+  // Actions
+  //
+  const doSubmit = async (query) => {
+    if (query !== "" && isAnswering === false) {
+      setStopAnswering(false); // Reset stop flag
+      setText(""); // Reset text
 
-    // Actions
-    //
-    const doSubmit = async (query) => {
-        if (query !== '' && isAnswering === false) {
+      addUserMessage(query);
+      addAssistantMessage("");
 
-            setStopAnswering(false); // Reset stop flag
-            setText('');             // Reset text
+      setIsAnswering(true);
 
-            addUserMessage(query);
-            addAssistantMessage('');
+      const messages_ = [...messages];
 
-            setIsAnswering(true);
+      console.log("texts:", texts);
+      if (texts.length > 0) {
+        const context = texts
+          .map((doc) => `Filename: ${doc.filename}\nText:\n${doc.text.trim()}`)
+          .join("\n\n---\n\n");
+        messages_.push({
+          role: "system",
+          content: `You are a helpful assistant. Use the following context:\n\n${context}`,
+        });
+      }
 
-            const messages_ = [...messages];
+      const documents = await queryDocs(query);
 
-            console.log("texts:", texts);
-            if (texts.length > 0) {
-                const context = texts
-                    .map(doc => `Filename: ${doc.filename}\nText:\n${doc.text.trim()}`)
-                    .join("\n\n---\n\n");
-                messages_.push(
-                    { "role": "system", "content": `You are a helpful assistant. Use the following context:\n\n${context}` }
-                );
-            }
+      console.log("Docs from Vector Store:", documents);
 
-            const documents = await queryDocs(query);
+      if (documents.length > 0) {
+        const context = documents.join("\n\n");
+        messages_.push({
+          role: "system",
+          content: `You are a helpful assistant. Use only the following context:\n\n${context}`,
+        });
+      }
 
-            console.log("docs:", documents)
+      messages_.push({ role: "user", content: query });
 
-            if (documents.length > 0) {
-                const context = documents.join("\n\n");
-                messages_.push(
-                    { "role": "system", "content": `You are a helpful assistant. Use only the following context:\n\n${context}` }
-                );
-            }
+      await streamChat2(messages_, appendToLastMessage, shouldStopFn);
 
-            messages_.push(
-                { "role": "user", "content": query }
-            );
-
-            await streamChat2(messages_, appendToLastMessage, shouldStopFn);
-
-            setIsAnswering(false);
-        }
+      setIsAnswering(false);
     }
+  };
 
-    const doStop = () => {
-        console.log("doStop called");
-        setStopAnswering(true);
-        setIsAnswering(false);
-    }
+  const doStop = () => {
+    console.log("doStop called");
+    setStopAnswering(true);
+    setIsAnswering(false);
+  };
 
-    return (
-        <div>
-            <div className="input-box">
-                <ChatInputFiles></ChatInputFiles>
-                <ChatInputText onSubmit={doSubmit} />
-                <ChatInputToolbar onSubmit={doSubmit} onStop={doStop} />
-            </div>
-            <center>
-                <small>ChattyGPT kann Fehler machen. Überprüfe wichtige Informationen. Siehe Cookie-Voreinstellungen.</small>
-            </center>
-        </div >
-    );
+  return (
+    <div>
+      <div className="input-box">
+        <ChatInputFiles></ChatInputFiles>
+        <ChatInputText onSubmit={doSubmit} />
+        <ChatInputToolbar onSubmit={doSubmit} onStop={doStop} />
+      </div>
+      <center>
+        <small>
+          ChattyGPT kann Fehler machen. Überprüfe wichtige Informationen. Siehe
+          Cookie-Voreinstellungen.
+        </small>
+      </center>
+    </div>
+  );
 }
 
 export default ChatInput;
