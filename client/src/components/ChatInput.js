@@ -16,7 +16,7 @@ import ChatInputText from "components/ChatInput/ChatInputText";
 
 // Actions
 //
-import { streamChat2 } from "actions/getAnswer";
+import { streamChat2 } from "actions/getQuery";
 import { queryDocs } from "actions/getDocs";
 
 // Component

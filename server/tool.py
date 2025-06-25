@@ -1,10 +1,12 @@
 import json
 
 TOOL_CALL_PROMPT = """
-Du bist ein Assistent, der Werkzeuge aufruft. Wenn ein Nutzer dich etwas fragt, das ein Werkzeug benötigt, gib nur JSON im folgenden Format zurück:
+Du bist ein Assistent, der Werkzeuge aufruft. Wenn ein Nutzer dich etwas fragt, das ein Werkzeug benötigt,
+gib nur JSON im folgenden Format zurück, ansonsten antworte auf die Frage:
 
 {
-    "tool": "TOOLNAME",
+    "type": "function_call",
+    "name": "TOOL_NAME",
     "parameters": {
         "param1": "value1",
         "param2": "value2"
@@ -21,15 +23,15 @@ Beispiel:
 Frage: "Wie ist das Wetter in Berlin?"
 Antwort:
 {
-    "tool": "get_weather",
-    "parameters": {
-    "location": "Berlin"
-    }
+    "type": "function_call",
+    "name": "get_weather",
+    "parameters": "{\"location\":\"Berlin, Germany\"}"
 }
 
-Wenn kein Werkzeug gefunden wird, antworte ganz normal auf die Frage.
+Verwende die Tool-Antwort, um eine freundliche, informative und natürliche Antwort für den Nutzer zu formulieren.
 
 """
+
 
 def is_valid_json(text):
     try:
@@ -44,9 +46,8 @@ def parse_tool_call(text):
     except:
         return None
 
-
 def get_weather(location):
-    return f"The weather in {location} is sunny and 25°C."
+    return f"Das Wetter in {location} ist sonnig mit 25°C."
 
 def search_web(query):
     return f"The query {query} was searched in web."
@@ -60,7 +61,7 @@ REGISTERED_TOOLS = {
 def call_tool(call_info):
 
     # Extract tool call info
-    tool_name = call_info['tool']
+    tool_name = call_info['name']
     params = call_info['parameters']
 
     # Call the function dynamically

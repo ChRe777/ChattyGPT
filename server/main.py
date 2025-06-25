@@ -1,16 +1,26 @@
 from flask import Flask, request, Response, jsonify
 from flask_cors import CORS
+
 import requests
 import json
 
+from tool import is_valid_json, call_tool
+from tool import TOOL_CALL_PROMPT
+
+# Init Flask
+#
 app = Flask(__name__)
 CORS(app)
 
+# Constants
+#
 OLLAMA_BASEURL = "http://localhost:11434/"
 MODEL = "llama3.2"
 
+## -CHAT--------------------------------------------------------------------------
+
 @app.route('/api/generate', methods=['POST'])
-def generate():
+def api_generate():
 
     data = request.json or {}
     user_prompt = data.get("prompt", "")
@@ -37,273 +47,175 @@ def generate():
     return Response(generate(), mimetype='text/event-stream')
 
 @app.route('/api/chat', methods=['POST'])
-def chat():
+def api_chat():
 
     data = request.json or {}
     messages = data.get("messages", [])
     model = data.get("model", MODEL)
     stream = data.get("stream", True)
 
-    def generate():
+    # Inject tool call prompt
+    #
+    messages.insert(0, {"role":"system","content":TOOL_CALL_PROMPT})
+
+    def generate2():
         payload = {
             "model": model,
             "messages": messages,
             "stream": stream
         }
 
+        print("messages:", messages)
+
+        # For tool call detection
+        json_buffer = ''
+        collecting_tool_call = False
+
         with requests.post(OLLAMA_BASEURL+"/api/chat", json=payload, stream=True) as r:
             for line in r.iter_lines():
-                print("")
-                print("line:", line)
+
+                # print("")
+                # print("line:", line)
+
                 # b'{"model":"llama3.2","created_at":"2025-06-22T21:28:28.742295Z","message":{"role":"assistant","content":"?"},"done":false}'
                 # b'{"model":"llama3.2","created_at":"2025-06-22T21:28:28.823326Z","message":{"role":"assistant","content":""},"done_reason":"stop","done":true,"total_duration":3551200583,"load_duration":1090000583,"prompt_eval_count":29,"prompt_eval_duration":1796870042,"eval_count":8,"eval_duration":661512583}'
 
                 if line:
                     try:
                         data = json.loads(line.decode('utf-8'))
-                        str = json.dumps(data)
-                        yield f"data: {str}\n\n"
+
+                        message_part = data.get("message", {}).get("content", "")
+                        if message_part.strip().startswith("{"):
+                            collecting_tool_call = True
+                            json_buffer += message_part
+                        elif collecting_tool_call:
+                            json_buffer += message_part
+                        else:
+                            str = json.dumps(data)
+                            yield f"data: {str}\n\n"
+
+                        if collecting_tool_call and is_valid_json(json_buffer):
+                            call_info = json.loads(json_buffer)
+                            result = call_tool(call_info)
+
+                            print("TOOL CALL:", result) # {'tool': 'get_weather', 'parameters': {'location': 'Berlin'}}
+
+                            # Gib Tool-Output ans LLM zurück
+                            tool_response = {
+                                "role": "tool",
+                                "name": call_info["tool"],
+                                "content": result
+                            }
+
+                            # Neues Prompt erstellen
+                            followup_payload = {
+                                "model": model,
+                                "messages": messages + [{"role": "assistant", "content": json_buffer}, tool_response],
+                                "stream": stream
+                            }
+
+
+                            # Neues Gespräch mit Antwort vom Tool
+                            with requests.post(OLLAMA_BASEURL+"/api/chat", json=followup_payload, stream=True) as request2:
+                                for line2 in request2.iter_lines():
+                                    print("line2", line2)
+                                    if line2:
+                                        try:
+                                            d2 = json.loads(line2.decode('utf-8'))
+                                            yield f"data: {json.dumps(d2)}\n\n"
+                                        except:
+                                            continue
+                            break  # Beende ersten Stream
+
                     except Exception as e:
                         print("Fehler beim Parsen:", e)
 
-    return Response(generate(), mimetype='text/event-stream')
+    def generate(messages):
+        payload = {
+            "model": model,
+            "messages": messages,
+            "stream": stream
+        }
 
-example = """
-{
-   "model":"llama3.2",
-   "created_at":"2025-06-22T21:21:59.2753Z",
-   "message":{
-      "role":"assistant",
-      "content":" How"
-   },
-   "done":false
-}
+        json_buffer = ''
+        collecting_tool_call = False
 
-{
-   "model":"llama3.2",
-   "created_at":"2025-06-22T21:21:59.309157Z",
-   "message":{
-      "role":"assistant",
-      "content":" can"
-   },
-   "done":false
-}
+        with requests.post(OLLAMA_BASEURL + "/api/chat", json=payload, stream=True) as r:
+            for line in r.iter_lines():
+                if not line:
+                    continue
 
-{
-   "model":"llama3.2",
-   "created_at":"2025-06-22T21:21:59.345553Z",
-   "message":{
-      "role":"assistant",
-      "content":" I"
-   },
-   "done":false
-}
+                try:
+                    data = json.loads(line.decode("utf-8"))
+                    content = data.get("message", {}).get("content", "")
 
-{
-   "model":"llama3.2",
-   "created_at":"2025-06-22T21:21:59.384337Z",
-   "message":{
-      "role":"assistant",
-      "content":" assist"
-   },
-   "done":false
-}
+                    if content.strip().startswith("{"):
+                        collecting_tool_call = True
+                        json_buffer += content
+                    elif collecting_tool_call:
+                        json_buffer += content
+                    else:
+                        yield f"data: {json.dumps(data)}\n\n"
 
-{
-   "model":"llama3.2",
-   "created_at":"2025-06-22T21:21:59.428658Z",
-   "message":{
-      "role":"assistant",
-      "content":" you"
-   },
-   "done":false
-}
+                    if collecting_tool_call and is_valid_json(json_buffer):
 
-{
-   "model":"llama3.2",
-   "created_at":"2025-06-22T21:21:59.479856Z",
-   "message":{
-      "role":"assistant",
-      "content":" today"
-   },
-   "done":false
-}
+                        call_info = json.loads(json_buffer)
 
-{
-   "model":"llama3.2",
-   "created_at":"2025-06-22T21:21:59.545697Z",
-   "message":{
-      "role":"assistant",
-      "content":"?"
-   },
-   "done":false
-}
+                        print("call_info", call_info)
 
-{
-   "model":"llama3.2",
-   "created_at":"2025-06-22T21:21:59.673128Z",
-   "message":{
-      "role":"assistant",
-      "content":""
-   },
-   "done_reason":"stop",
-   "done":true,
-   "total_duration":958319333,
-   "load_duration":35102500,
-   "prompt_eval_count":29,
-   "prompt_eval_duration":516852292,
-   "eval_count":8,
-   "eval_duration":398079708
-}
+                        result = call_tool(call_info)
 
-curl http://localhost:5050/api/chat2 \
-  -H "Content-Type: application/json" \
-  -d '{
-    "messages": [
-      {"role":"user","content":"Hi!"},
-      {"role":"assistant","content":"Hello!"}
-    ],
-    "stream": false
-  }'
+                        # Statt role: "tool", sende die Antwort als user-Nachricht:
+                        messages += [
+                            { "role": "assistant", "content": json.dumps(call_info) },
+                            { "role": "user", "content": f"Toolantwort: {result}. Bitte antworte dem Nutzer entsprechend." }
+                        ]
 
-  -->
+                        #tool_response = {
+                        #    "role": "tool",
+                        #    "name": call_info["name"],
+                        #    "content": result
+                        #}
 
-  {
-    "created_at": "2025-06-23T11:34:43.772891Z",
-    "done": true,
-    "done_reason": "stop",
-    "eval_count": 8,
-    "eval_duration": 511952125,
-    "load_duration": 32924667,
-    "message": {
-      "content": " How can I assist you today?",
-      "role": "assistant"
-    },
-    "model": "llama3.2",
-    "prompt_eval_count": 29,
-    "prompt_eval_duration": 691856250,
-    "total_duration": 1238660667
-  }
+                        # Folge-Konversation mit Tool-Antwort
+                        followup_payload = {
+                            "model": model,
+                            "messages": messages,
+                            #"messages": messages + [
+                            #    {"role": "assistant", "content": json_buffer},
+                            #    tool_response,
+                            #],
+                            "stream": True
+                        }
 
-curl http://localhost:5050/api/chat2 \
-  -H "Content-Type: application/json" \
-  -d '{
-    "messages": [
-      {"role":"user","content":"Hi!"},
-      {"role":"assistant","content":"Hello!"}
-    ],
-    "stream": true
-  }'
+                        print(followup_payload)
 
--->
+                        with requests.post(OLLAMA_BASEURL + "/api/chat", json=followup_payload, stream=True) as r2:
+                            for line2 in r2.iter_lines():
+                                if line2:
+                                    try:
+                                        d2 = json.loads(line2.decode("utf-8"))
+                                        yield f"data: {json.dumps(d2)}\n\n"
+                                    except Exception as e:
+                                        print("Fehler in follow-up JSON:", e)
 
-data: {"model": "llama3.2", "created_at": "2025-06-23T11:43:15.681288Z", "message": {"role": "assistant", "content": " How"}, "done": false}
+                        break  # Ursprünglichen Stream beenden
 
-data: {"model": "llama3.2", "created_at": "2025-06-23T11:43:15.689043Z", "message": {"role": "assistant", "content": " can"}, "done": false}
+                except Exception as e:
+                    print("Fehler beim Parsen:", e)
 
-data: {"model": "llama3.2", "created_at": "2025-06-23T11:43:15.731235Z", "message": {"role": "assistant", "content": " I"}, "done": false}
+    return Response(generate(messages), mimetype='text/event-stream')
 
-data: {"model": "llama3.2", "created_at": "2025-06-23T11:43:15.781609Z", "message": {"role": "assistant", "content": " assist"}, "done": false}
-
-data: {"model": "llama3.2", "created_at": "2025-06-23T11:43:15.839559Z", "message": {"role": "assistant", "content": " you"}, "done": false}
-
-data: {"model": "llama3.2", "created_at": "2025-06-23T11:43:15.915675Z", "message": {"role": "assistant", "content": " today"}, "done": false}
-
-data: {"model": "llama3.2", "created_at": "2025-06-23T11:43:16.03975Z", "message": {"role": "assistant", "content": "?"}, "done": false}
-
-data: {"model": "llama3.2", "created_at": "2025-06-23T11:43:16.166643Z", "message": {"role": "assistant", "content": ""}, "done_reason": "stop", "done": true, "total_duration": 4457747667, "load_duration": 1078256958, "prompt_eval_count": 29, "prompt_eval_duration": 2834613500, "eval_count": 8, "eval_duration": 538990041}
-
-"""
-
-
-
-
-@app.route('/api/chat2', methods=['POST'])
-def chat2():
-
-    data = request.json or {}
-    messages = data.get("messages", [])
-    model = data.get("model", MODEL)
-    stream = data.get("stream", True)
-
-    payload = {
-        "model": model,
-        "messages": messages,
-        "stream": stream  # Pass this to OLLAMA as-is
-    }
-
-    if stream:
-        # --- Streamed response using SSE ---
-        def generate():
-            with requests.post(OLLAMA_BASEURL + "/api/chat", json=payload, stream=True) as r:
-                if r.status_code != 200:
-                    yield f"data: {{\"error\": \"Upstream error {r.status_code}\"}}\n\n"
-                    return
-
-                for line in r.iter_lines():
-                    if line:
-                        try:
-                            data = json.loads(line.decode('utf-8'))
-                            json_str = json.dumps(data)
-                            yield f"data: {json_str}\n\n"
-                        except Exception as e:
-                            print("Fehler beim Parsen:", e)
-                            yield f"data: {{\"error\": \"Parse error: {str(e)}\"}}\n\n"
-
-        return Response(generate(), mimetype='text/event-stream', headers={
-            'Cache-Control': 'no-cache',
-            'X-Accel-Buffering': 'no',
-            'Content-Type': 'text/event-stream',
-            'Connection': 'keep-alive',
-        })
-
-    else:
-        # --- Non-streamed response: wait for full result ---
-        r = requests.post(OLLAMA_BASEURL + "/api/chat", json=payload)
-        if r.status_code != 200:
-            return jsonify({"error": f"Upstream error {r.status_code}"}), r.status_code
-
-        try:
-            return jsonify(r.json())
-        except Exception as e:
-            print("JSON parse error:", e)
-            return jsonify({"error": "Failed to parse OLLAMA response"}), 500
-
-@app.route('/api/chat3', methods=['POST'])
-def chat3():
-
-    data = request.json or {}
-    messages = data.get("messages", [])
-    model = data.get("model", MODEL)
-    stream = data.get("stream", True)
-
-    from ollama import chat
-
-    stream = chat(
-        model=model,
-        messages=messages,
-        stream=stream,
-    )
-
-    def generate():
-        for chunk in stream:
-            print(chunk['message']['content'], end='', flush=True)
-            return chunk['message']['content']
-
-    return Response(generate(), mimetype='text/event-stream', headers={
-        'Cache-Control': 'no-cache',
-        'X-Accel-Buffering': 'no',
-        'Content-Type': 'text/event-stream',
-        'Connection': 'keep-alive',
-    })
-
-
-## ----------------------------------------------------------------------------
+## -DOCS--------------------------------------------------------------------------
 
 import chromadb
-COLLECTION_NAME = "docs"
 
-client = chromadb.PersistentClient(path="./chroma_db")
+# Constants
+#
+COLLECTION_NAME = "docs"
+CHROMA_PATH = "./chroma_db"
+
+client = chromadb.PersistentClient(path=CHROMA_PATH)
 collection = client.get_collection(name=COLLECTION_NAME)
 
 """
@@ -316,7 +228,7 @@ curl http://localhost:5050/api/docs \
   }'
 """
 @app.route('/api/docs', methods=['POST'])
-def docs():
+def api_docs():
 
     data = request.json or {}
     embeddings = data.get("embeddings", [])
@@ -338,13 +250,14 @@ curl http://localhost:5050/api/docs/query \
 """
 
 @app.route('/api/docs/query', methods=['POST'])
-def docs_():
+def api_docs_query():
     data = request.json or {}
     query = data.get("query", [])
 
     results = getDocs(query)
 
     return jsonify(results), 200
+
 
 if __name__ == '__main__':
     app.run(port=5050, debug=True)
