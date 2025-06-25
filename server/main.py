@@ -4,7 +4,7 @@ from flask_cors import CORS
 import requests
 import json
 
-from tool import is_valid_json, call_tool
+from tool import is_valid_json, call_tool, need_tool_call_prompt
 from tool import TOOL_CALL_PROMPT
 
 # Init Flask
@@ -18,22 +18,6 @@ OLLAMA_BASEURL = "http://localhost:11434/"
 MODEL = "llama3.2"
 
 ## -CHAT--------------------------------------------------------------------------
-
-def need_tool_call_prompt(messages):
-    def get_last_user_input(messages):
-        for message in reversed(messages):
-            if message["role"] == "user":
-                return message["content"]
-        return None  # Falls keine user-Nachricht vorhanden ist
-
-    def needs_tool_response(user_input: str) -> bool:
-        keywords = ["Wetter", "heute", "aktuell", "jetzt", "suchen", "im Internet", "News", "Temperatur"]
-        user_input_lower = user_input.lower()
-        return any(keyword.lower() in user_input_lower for keyword in keywords)
-
-    user_input = get_last_user_input(messages)
-    return user_input and needs_tool_response(user_input)
-
 
 @app.route('/api/generate', methods=['POST'])
 def api_generate():
@@ -61,9 +45,6 @@ def api_generate():
                         print("Fehler beim Parsen:", e)
 
     return Response(generate(), mimetype='text/event-stream')
-
-
-
 
 @app.route('/api/chat', methods=['POST'])
 def api_chat():

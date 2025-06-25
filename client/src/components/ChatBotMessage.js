@@ -1,19 +1,24 @@
 // Styles
 //
-import "./ChatMessage.css"
+import "./ChatMessage.css";
 
 // Components
 //
-import Markdown from 'markdown-to-jsx';
+import Markdown from "markdown-to-jsx";
 
 // Component
 //
 function ChatBotMessage({ message }) {
     return (
         <div className="bot-message chat-message">
-            {message === ''
-                ? <progress className="progress" max="100"></progress>
-                : <Markdown>{message}</Markdown>}
+            {message === "" ? (
+                <progress
+                    className="progress progress-bar"
+                    max="100"
+                ></progress>
+            ) : (
+                <Markdown>{message}</Markdown>
+            )}
         </div>
     );
 }

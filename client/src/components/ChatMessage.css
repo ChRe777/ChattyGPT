@@ -26,3 +26,7 @@
     margin-top: 1em;
     margin-bottom: 1em;
 }
+
+.progress-bar {
+    width: 10%;
+}

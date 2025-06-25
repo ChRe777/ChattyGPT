@@ -29,9 +29,10 @@ function ChatInput() {
         addAssistantMessage,
         appendToLastMessage,
         messages,
-        texts,
+        attachedTexts,
         isAnswering,
         setIsAnswering,
+        setFoundDocs,
         setText,
     } = useChatMessageStore();
     const [stopAnswering, setStopAnswering] = useState(false);
@@ -48,6 +49,42 @@ function ChatInput() {
     // Always returns the latest value
     const shouldStopFn = () => stopRef.current;
 
+    const attachTextsToMessages = (messages) => {
+        if (attachedTexts.length > 0) {
+            const context = attachedTexts
+                .map(
+                    (doc) =>
+                        `Filename: ${doc.filename}\nText:\n${doc.text.trim()}`,
+                )
+                .join("\n\n---\n\n");
+            messages.push({
+                role: "system",
+                content: `You are a helpful assistant. Use the following context:\n\n${context}`,
+            });
+        }
+    };
+
+    const addQueryDocs = async (messages, query) => {
+        const documents = await queryDocs(query);
+
+        console.log("Docs from Vector Store:", documents);
+
+        if (documents.length > 0) {
+            setFoundDocs(documents.length);
+            const context = documents.join("\n\n");
+            messages.push({
+                role: "system",
+                content: `You are a helpful assistant. Use only the following context:\n\n${context}`,
+            });
+        } else {
+            setFoundDocs(0);
+        }
+    };
+
+    const addQuery = (messages, query) => {
+        messages.push({ role: "user", content: query });
+    };
+
     // Actions
     //
     const doSubmit = async (query) => {
@@ -61,34 +98,9 @@ function ChatInput() {
             setIsAnswering(true);
 
             const messages_ = [...messages];
-
-            console.log("texts:", texts);
-            if (texts.length > 0) {
-                const context = texts
-                    .map(
-                        (doc) =>
-                            `Filename: ${doc.filename}\nText:\n${doc.text.trim()}`,
-                    )
-                    .join("\n\n---\n\n");
-                messages_.push({
-                    role: "system",
-                    content: `You are a helpful assistant. Use the following context:\n\n${context}`,
-                });
-            }
-
-            const documents = await queryDocs(query);
-
-            console.log("Docs from Vector Store:", documents);
-
-            if (documents.length > 0) {
-                const context = documents.join("\n\n");
-                messages_.push({
-                    role: "system",
-                    content: `You are a helpful assistant. Use only the following context:\n\n${context}`,
-                });
-            }
-
-            messages_.push({ role: "user", content: query });
+            attachTextsToMessages(messages_);
+            await addQueryDocs(messages_, query);
+            addQuery(messages_, query);
 
             await streamChat2(messages_, appendToLastMessage, shouldStopFn);
 
