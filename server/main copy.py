@@ -19,22 +19,6 @@ MODEL = "llama3.2"
 
 ## -CHAT--------------------------------------------------------------------------
 
-def need_tool_call_prompt(messages):
-    def get_last_user_input(messages):
-        for message in reversed(messages):
-            if message["role"] == "user":
-                return message["content"]
-        return None  # Falls keine user-Nachricht vorhanden ist
-
-    def needs_tool_response(user_input: str) -> bool:
-        keywords = ["Wetter", "heute", "aktuell", "jetzt", "suchen", "im Internet", "News", "Temperatur"]
-        user_input_lower = user_input.lower()
-        return any(keyword.lower() in user_input_lower for keyword in keywords)
-
-    user_input = get_last_user_input(messages)
-    return user_input and needs_tool_response(user_input)
-
-
 @app.route('/api/generate', methods=['POST'])
 def api_generate():
 
@@ -62,9 +46,6 @@ def api_generate():
 
     return Response(generate(), mimetype='text/event-stream')
 
-
-
-
 @app.route('/api/chat', methods=['POST'])
 def api_chat():
 
@@ -73,10 +54,100 @@ def api_chat():
     model = data.get("model", MODEL)
     stream = data.get("stream", True)
 
-    # Inject tool call prompt
-    #
-    if need_tool_call_prompt(messages):
-        messages.insert(0, {"role":"system","content": TOOL_CALL_PROMPT})
+    def get_last_user_input(messages):
+        for message in reversed(messages):
+            if message["role"] == "user":
+                return message["content"]
+        return None  # Falls keine user-Nachricht vorhanden ist
+
+    def needs_tool_response(user_input: str) -> bool:
+        keywords = ["Wetter", "heute", "aktuell", "jetzt", "suchen", "im Internet", "News", "Temperatur"]
+        user_input_lower = user_input.lower()
+        return any(keyword.lower() in user_input_lower for keyword in keywords)
+
+    user_input = get_last_user_input(messages)
+
+    print("user_input", user_input)
+
+    if user_input and needs_tool_response(user_input):
+        messages = [TOOL_CALL_PROMPT] + messages
+    else:
+        # Normale Konversation ohne Tool-Prompt
+        messages = [{"role": "system", "content": "Du bist ein hilfreicher Assistent."}] + messages
+
+    print(messages)
+
+    def generate2():
+        payload = {
+            "model": model,
+            "messages": messages,
+            "stream": stream
+        }
+
+        #print("messages:", messages)
+
+        # For tool call detection
+        json_buffer = ''
+        collecting_tool_call = False
+
+        with requests.post(OLLAMA_BASEURL+"/api/chat", json=payload, stream=True) as r:
+            for line in r.iter_lines():
+
+                # print("")
+                # print("line:", line)
+
+                # b'{"model":"llama3.2","created_at":"2025-06-22T21:28:28.742295Z","message":{"role":"assistant","content":"?"},"done":false}'
+                # b'{"model":"llama3.2","created_at":"2025-06-22T21:28:28.823326Z","message":{"role":"assistant","content":""},"done_reason":"stop","done":true,"total_duration":3551200583,"load_duration":1090000583,"prompt_eval_count":29,"prompt_eval_duration":1796870042,"eval_count":8,"eval_duration":661512583}'
+
+                if line:
+                    try:
+                        data = json.loads(line.decode('utf-8'))
+
+                        message_part = data.get("message", {}).get("content", "")
+                        if message_part.strip().startswith("{"):
+                            collecting_tool_call = True
+                            json_buffer += message_part
+                        elif collecting_tool_call:
+                            json_buffer += message_part
+                        else:
+                            str = json.dumps(data)
+                            yield f"data: {str}\n\n"
+
+                        if collecting_tool_call and is_valid_json(json_buffer):
+                            call_info = json.loads(json_buffer)
+                            result = call_tool(call_info)
+
+                            print("TOOL CALL:", result) # {'tool': 'get_weather', 'parameters': {'location': 'Berlin'}}
+
+                            # Gib Tool-Output ans LLM zurück
+                            tool_response = {
+                                "role": "tool",
+                                "name": call_info["tool"],
+                                "content": result
+                            }
+
+                            # Neues Prompt erstellen
+                            followup_payload = {
+                                "model": model,
+                                "messages": messages + [{"role": "assistant", "content": json_buffer}, tool_response],
+                                "stream": stream
+                            }
+
+
+                            # Neues Gespräch mit Antwort vom Tool
+                            with requests.post(OLLAMA_BASEURL+"/api/chat", json=followup_payload, stream=True) as request2:
+                                for line2 in request2.iter_lines():
+                                    print("line2", line2)
+                                    if line2:
+                                        try:
+                                            d2 = json.loads(line2.decode('utf-8'))
+                                            yield f"data: {json.dumps(d2)}\n\n"
+                                        except:
+                                            continue
+                            break  # Beende ersten Stream
+
+                    except Exception as e:
+                        print("Fehler beim Parsen:", e)
 
     def generate(messages):
         payload = {
@@ -119,25 +190,12 @@ def api_chat():
                             { "role": "user", "content": f"Toolantwort: {result}. Bitte antworte dem Nutzer entsprechend." }
                         ]
 
-                        #tool_response = {
-                        #    "role": "tool",
-                        #    "name": call_info["name"],
-                        #    "content": result
-                        #}
-
                         # Folge-Konversation mit Tool-Antwort
                         followup_payload = {
                             "model": model,
                             "messages": messages,
-                            #"messages": messages + [
-                            #    {"role": "assistant", "content": json_buffer},
-                            #    tool_response,
-                            #],
                             "stream": True
                         }
-
-                        print(followup_payload)
-
                         with requests.post(OLLAMA_BASEURL + "/api/chat", json=followup_payload, stream=True) as r2:
                             for line2 in r2.iter_lines():
                                 if line2:

@@ -1,6 +1,6 @@
 import json
 
-TOOL_CALL_PROMPT = """
+TOOL_CALL_PROMPT_OLD = """
 Du bist ein Assistent, der Werkzeuge aufruft. Wenn ein Nutzer dich etwas fragt, das ein Werkzeug benötigt,
 gib nur JSON im folgenden Format zurück, ansonsten antworte auf die Frage:
 
@@ -30,6 +30,40 @@ Antwort:
 
 Verwende die Tool-Antwort, um eine freundliche, informative und natürliche Antwort für den Nutzer zu formulieren.
 
+"""
+
+TOOL_CALL_PROMPT = """
+Du bist ein Assistent, der bei Bedarf Werkzeuge verwendet. Wenn eine Nutzerfrage eindeutig nach externer Information verlangt (z. B. aktuelle Daten, Websuche oder Wetter), kannst du das passende Tool aufrufen. Ansonsten antworte direkt.
+
+Verwende nur dann ein Tool, wenn es einen klaren Mehrwert für die Beantwortung der Frage bietet.
+
+Wenn du ein Tool verwendest, gib ausschließlich folgendes JSON-Format zurück:
+
+{
+    "type": "function_call",
+    "name": "TOOL_NAME",
+    "parameters": {
+        "param1": "value1",
+        "param2": "value2"
+    }
+}
+
+Tools:
+- get_weather(location: string)
+- search_web(query: string)
+
+Beispiel:
+Frage: "Wie ist das Wetter in Berlin?"
+Antwort:
+{
+    "type": "function_call",
+    "name": "get_weather",
+    "parameters": {
+        "location": "Berlin, Germany"
+    }
+}
+
+Nach dem Tool-Aufruf kannst du die Antwort nutzen, um dem Nutzer eine freundliche, informative und natürliche Antwort zu geben.
 """
 
 
