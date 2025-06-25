@@ -9,10 +9,14 @@ function ExpandCollapseIcon({ isExpanded, onClick }) {
 
     return (
         <i
-            className={`icon ${iconArrow} mr-1 cursor-pointer`}
             onClick={onClick}
+            className={`icon ${iconArrow} mr-1 cursor-pointer text-gray`}
         />
     );
+}
+
+function PlaceHolderIcon() {
+    return <i className={`icon mr-1`} style={{ visibility: "hidden" }} />;
 }
 
 // 🔒 Checkbox + Label-Zeile
@@ -24,12 +28,14 @@ const TreeItemLabel = ({
     expanded,
     onToggleExpand,
 }) => (
-    <div className="bg-secondary d-flex d-flex-vertical-center">
-        {hasChildren && (
+    <div className="d-flex d-flex-vertical-center">
+        {hasChildren ? (
             <ExpandCollapseIcon
                 isExpanded={expanded}
                 onClick={onToggleExpand}
             />
+        ) : (
+            <PlaceHolderIcon />
         )}
         <input
             className="mx-1 align-middle"
