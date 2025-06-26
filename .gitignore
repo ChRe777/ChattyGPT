@@ -12,6 +12,7 @@
 __pycache__
 
 server/chroma_db/
+server-ms/chroma_db/
 
 # production
 /build

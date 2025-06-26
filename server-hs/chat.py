@@ -13,17 +13,20 @@ from typing import List
 
 # -----------------------------------------------------------------------------
 
-generator = OllamaChatGenerator(model="llama3.2",
-                            url = "http://localhost:11434",
-                            generation_kwargs={
-                              "num_predict": 100,
-                              "temperature": 0.9,
-                            })
+generator = OllamaChatGenerator(
+    model="llama3.2",
+    url = "http://localhost:11434",
+    generation_kwargs={
+        "num_predict": 100,
+        "temperature": 0.9,
+    }
+)
 
-#messages = [ChatMessage.from_system("\nYou are a helpful, respectful and honest assistant"),
-#ChatMessage.from_user("What's Natural Language Processing?")]
+# -----------------------------------------------------------------------------
 
-#print(generator.run(messages=messages))
+# messages = [ChatMessage.from_system("\nYou are a helpful, respectful and honest assistant"),
+# ChatMessage.from_user("What's Natural Language Processing?")]
+# print(generator.run(messages=messages))
 
 # -----------------------------------------------------------------------------
 
@@ -109,21 +112,44 @@ def chat(messages: List[ChatMessage], callback_fn):
 
     def streaming_chunk(chunk: StreamingChunk) -> None:
 
-        # Print the main content of the chunk (from ChatGenerator)
-        if content := chunk.content:
-            print("streaming_chunk called", content)
-            callback_fn(content)
+        """StreamingChunk(content='',
+            meta={'model': 'llama3.2',
+                'created_at': '2025-06-26T18:14:11.944205Z',
+                'done': True,
+                'done_reason': 'stop',
+                'total_duration': 5522938917,
+                'load_duration': 23154375,
+                'prompt_eval_count': 152,
+                'prompt_eval_duration': 603993541,
+                'eval_count': 54,
+                'eval_duration': 4888944875,
+                'role': 'assistant'
+            }
+        )
+        """
 
-        # End of LLM assistant message so we add two new lines
-        # This ensures spacing between multiple LLM messages (e.g. Agent)
-        if chunk.meta.get("finish_reason") is not None:
-            callback_fn("\n\n")
+        data = {}
+        try:
+            data = {
+                "model": chunk.meta["model"],
+                "created_at": chunk.meta["created_at"],
+                "message": {"role": chunk.meta["role"], "content": chunk.content},
+                "done_reason": chunk.meta["done_reason"],
+                "done": chunk.meta["done"]
+            }
+        except:
+            print("chunk - ", chunk)
+            # chunk - StreamingChunk(content='', meta={'tool_result': 'Tool executed with QUERY: foo', 'tool_call': ToolCall(tool_name='echo_tool', arguments={}, id=None)})
+            # chunk - StreamingChunk(content='', meta={'finish_reason': 'tool_call_results'})
 
-    result = agent.run(messages=messages, streaming_callback=streaming_chunk)
-    return result
+        callback_fn(data)
+
+    agent.run(messages=messages, streaming_callback=streaming_chunk)
 
 
-    print(type(result))
+def foo():
+
+    result = agent.run(messages=messages)
 
     for message in result["messages"]:
         print("\n======")

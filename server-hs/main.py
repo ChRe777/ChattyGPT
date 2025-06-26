@@ -21,9 +21,8 @@ def generate_response(messages, chat):
     def generate():
         q = queue.Queue()
 
-        def callback_fn(chunk: str):
-            print("callback_fn", chunk)
-            q.put(chunk)
+        def callback_fn(data: dict):
+            q.put(data)
 
         # Run `chat` in a separate thread so it doesn't block `generate`
         def run_chat():
@@ -33,10 +32,12 @@ def generate_response(messages, chat):
         threading.Thread(target=run_chat, daemon=True).start()
 
         while True:
-            chunk = q.get()
-            if chunk is None:
+            data = q.get()
+            if data is None:
                 break
-            yield f"data: {chunk}\n\n"  # SSE format
+            if data != {}:
+                yield f"data: {data}\n\n"  # SSE format
+            #data: {"model": "llama3.2", "created_at": "2025-06-26T18:10:12.537403Z", "message": {"role": "assistant", "content": ""}, "done_reason": "load", "done": true}
 
     return Response(generate(), mimetype='text/event-stream')
 
@@ -55,6 +56,7 @@ curl http://localhost:5070/api/chat \
   -H "Content-Type: application/json" \
   -d '{"model": "llama3.2"}'
 """
+
 
 if __name__ == '__main__':
     app.run(port=5070, debug=True)

@@ -46,6 +46,13 @@ def api_generate():
 
     return Response(generate(), mimetype='text/event-stream')
 
+"""
+curl http://localhost:5050/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+  }'
+"""
+
 @app.route('/api/chat', methods=['POST'])
 def api_chat():
 
