@@ -6,6 +6,7 @@ import Layout from "layouts/Layout";
 import ChatMessages from "components/ChatMessages";
 import ChatMessagesSubscriber from "components/ChatMessageSubscriber";
 import TreeView from "components/TreeView";
+import Breadcrumb from "components/BreadCrumb";
 
 // Example data
 //
@@ -40,6 +41,7 @@ const data = [
 function App() {
     return (
         <Layout>
+            <Breadcrumb />
             <TreeView data={data} />
             <ChatMessages />
             <ChatMessagesSubscriber />

@@ -26,7 +26,6 @@ function ChatMessages() {
         <div className="chat-messages">
             {messages.map((item, index, all) => {
                 if (item.role === "user") {
-                    console.log(all);
                     return (
                         <ChatUserMessage
                             key={index}

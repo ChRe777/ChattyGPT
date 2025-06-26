@@ -6,7 +6,10 @@ def getDocs(query):
     client = chromadb.PersistentClient(path="./chroma_db")
     collection = client.get_collection(name="docs")
 
-    response = ollama.embed(model="llama3.2", input=query)
+    response = ollama.embed(
+        model="nomic-embed-text",
+        input=query
+    )
     embeddings = response["embeddings"]
     query_result = collection.query(
         query_embeddings=embeddings,

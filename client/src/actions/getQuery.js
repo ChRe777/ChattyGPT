@@ -123,7 +123,6 @@ export async function streamChat2(messages, onData, shouldStop, setToolCall) {
         // User request stop streaming
         //
         const stop = shouldStop();
-        console.log("stop", stop);
         if (stop) {
             reader.cancel();
             break;
@@ -148,15 +147,11 @@ export async function streamChat2(messages, onData, shouldStop, setToolCall) {
                 const jsonStr = line.slice(5).trim(); // Remove "data:" prefix
                 const data = JSON.parse(jsonStr);
 
-                // TODO
-                // console.log("data ->", data);
-
                 if (data?.message?.content) {
                     onData(data.message.content);
                 }
 
                 if (data.done) {
-                    console.log("Streaming complete.");
                     break;
                 }
             } catch (err) {

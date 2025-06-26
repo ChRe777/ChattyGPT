@@ -11,6 +11,7 @@ documents = [
   "Llamas live to be about 20 years old, though some only live for 15 years and others live to be 30 years old",
 ]
 
+
 client = chromadb.PersistentClient(path="./chroma_db")
 collection = client.get_collection(name="docs")
 #collection = client.create_collection(name="docs")
@@ -19,7 +20,10 @@ collection = client.get_collection(name="docs")
 for i, doc in enumerate(documents):
 
   # Get embeddings - see https://ollama.com/blog/embedding-models
-  response = ollama.embed(model="llama3.2", input=doc)
+  response = ollama.embed(
+      model="nomic-embed-text",
+      input=doc
+  )
   embeddings = response["embeddings"]
 
   # Add to collection

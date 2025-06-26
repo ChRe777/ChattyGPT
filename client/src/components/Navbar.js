@@ -1,10 +1,7 @@
 // Store
 //
-import useChatMessageStore from "stores/chatMessageStore";
 
 function Navbar() {
-    const { foundDocuments } = useChatMessageStore();
-
     return (
         <header className="navbar py-2">
             <section className="navbar-section">
@@ -28,11 +25,6 @@ function Navbar() {
                 </a>
             </section>
             <section className="navbar-section">
-                {foundDocuments > 0 && (
-                    <span className="mr-2 badge" data-badge={foundDocuments}>
-                        Found Docs
-                    </span>
-                )}
                 <button className="btn btn-primary btn-sm" disabled>
                     Anmelden
                 </button>

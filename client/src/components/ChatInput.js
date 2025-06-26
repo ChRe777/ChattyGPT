@@ -66,9 +66,6 @@ function ChatInput() {
 
     const addQueryDocs = async (messages, query) => {
         const documents = await queryDocs(query);
-
-        console.log("Docs from Vector Store:", documents);
-
         if (documents.length > 0) {
             setFoundDocs(documents.length);
             const context = documents.join("\n\n");
@@ -109,7 +106,6 @@ function ChatInput() {
     };
 
     const doStop = () => {
-        console.log("doStop called");
         setStopAnswering(true);
         setIsAnswering(false);
     };

@@ -1,10 +1,10 @@
 // Libs
 //
-import { useEffect } from 'react';
+import { useEffect } from "react";
 
 // Store
 //
-import useChatMessageStore from 'stores/chatMessageStore';
+import useChatMessageStore from "stores/chatMessageStore";
 
 // Component
 //
@@ -12,7 +12,7 @@ function ChatMessagesSubscriber() {
     useEffect(() => {
         const unsubscribe = useChatMessageStore.subscribe(
             (state) => {
-                console.log('Messages changed:', state.messages.length);
+                //console.log('Messages changed:', state.messages.length);
             },
             (state) => state.messages,
         );

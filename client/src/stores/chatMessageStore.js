@@ -86,7 +86,6 @@ const useChatMessageStore = create(
 
         clearTexts: () =>
             set((state) => {
-                console.log("clear texts");
                 state.attachedTexts = [];
             }),
 

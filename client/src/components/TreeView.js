@@ -43,7 +43,9 @@ const TreeItemLabel = ({
             checked={isChecked}
             onChange={onToggleChecked}
         />
-        <span>{node.label}</span>
+        <span className={`box ${isChecked ? " text-bold" : ""}`}>
+            {node.label}
+        </span>
     </div>
 );
 
@@ -53,7 +55,7 @@ function TreeNode({ node }) {
     const hasChildren = node.children && node.children.length > 0;
 
     return (
-        <li class="nav-item">
+        <li className="nav-item">
             <TreeItemLabel
                 node={node}
                 isChecked={isChecked}
@@ -63,7 +65,7 @@ function TreeNode({ node }) {
                 onToggleExpand={() => setExpanded(!expanded)}
             />
             {hasChildren && expanded && (
-                <ul class="nav">
+                <ul className="nav">
                     {node.children.map((child) => (
                         <TreeNode key={child.id} node={child} />
                     ))}
@@ -76,7 +78,7 @@ function TreeNode({ node }) {
 function TreeView({ data }) {
     return (
         <div>
-            <ul class="nav">
+            <ul className="nav">
                 {data.map((node) => (
                     <TreeNode key={node.id} node={node} />
                 ))}
