@@ -1,9 +1,13 @@
 # Haystack
 #
-from haystack import Pipeline
-from haystack_integrations.document_stores.chroma import ChromaDocumentStore
-from haystack_integrations.components.retrievers.chroma import ChromaEmbeddingRetriever
-from haystack_integrations.components.embedders.ollama import OllamaTextEmbedder
+
+#from haystack import Pipeline
+#from haystack_integrations.document_stores.chroma import ChromaDocumentStore
+#from haystack_integrations.components.retrievers.chroma import ChromaEmbeddingRetriever
+#from haystack_integrations.components.embedders.ollama import OllamaTextEmbedder
+
+from haystack_ import Pipeline, ChromaDocumentStore, ChromaEmbeddingRetriever, OllamaTextEmbedder
+
 
 # Create components
 #

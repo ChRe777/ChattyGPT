@@ -81,7 +81,7 @@ from haystack.components.generators.utils import print_streaming_chunk
 from haystack.components.agents.agent import Agent
 from haystack.tools import Tool
 
-def echo(query: str="foo") -> str:
+def echo(query: str) -> str:
     res = f"Tool executed with QUERY: {query}"
     return res
 
@@ -105,11 +105,6 @@ agent = Agent(
 
 def chat(messages: List[ChatMessage], callback_fn):
 
-    messages = [
-        ChatMessage.from_system("\nYou are a helpful, respectful and honest assistant"),
-        ChatMessage.from_user(prompt)
-    ]
-
     def streaming_chunk(chunk: StreamingChunk) -> None:
 
         """StreamingChunk(content='',
@@ -128,6 +123,9 @@ def chat(messages: List[ChatMessage], callback_fn):
         )
         """
 
+        # see https://docs.haystack.deepset.ai/docs/chatmessage
+        # see https://docs.haystack.deepset.ai/docs/chatmessage#from_assistant-with-toolcall
+
         data = {}
         try:
             data = {
@@ -139,10 +137,17 @@ def chat(messages: List[ChatMessage], callback_fn):
             }
         except:
             print("chunk - ", chunk)
+            # see https://docs.haystack.deepset.ai/docs/chatmessage#from_assistant-with-toolcall
             # chunk - StreamingChunk(content='', meta={'tool_result': 'Tool executed with QUERY: foo', 'tool_call': ToolCall(tool_name='echo_tool', arguments={}, id=None)})
             # chunk - StreamingChunk(content='', meta={'finish_reason': 'tool_call_results'})
 
         callback_fn(data)
+
+    # TODO: Messages -> ChatMessages
+    messages = [
+        ChatMessage.from_system("\nYou are a helpful, respectful and honest assistant"),
+        ChatMessage.from_user(prompt)
+    ]
 
     agent.run(messages=messages, streaming_callback=streaming_chunk)
 

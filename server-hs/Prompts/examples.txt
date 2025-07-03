@@ -1,0 +1,64 @@
+
+You are an assistant giving out valuable information to language learners.
+What is the official language of Austria.
+
+> German
+
+--------
+
+You are a helpful assistant.
+Given these documents, answer the question.
+Documents:
+    {% for doc in documents %}{{ doc.content }}
+    {% endfor %}
+
+Question: {{question}}
+Answer:
+
+--------
+
+Replace with some long text documents, code or instructions.
+A query about the long text for example.
+
+--------
+
+You are an assistant giving out valuable information to language learners.
+Answer this question, be brief.
+
+Question: {{ query }}
+
+What language is spoke in Germany?
+
+---------
+
+What's Natural Language Processing? Be brief.
+
+--------
+
+Briefly explain what NLP is in one sentence
+
+--------
+
+You are a helpful, respectful and honest assistant
+What's Natural Language Processing?
+
+-------- DALLE -
+
+Create a {style} image with the following details:
+
+Main subject: {prompt}
+Artistic style: {art_style}
+Lighting: {lighting}
+Color palette: {colors}
+Composition: {composition}
+Additional details: {details}
+
+ {
+    "prompt": "a mystical treehouse library",
+    "style": "photorealistic",
+    "art_style": "fantasy concept art with intricate details",
+    "lighting": "dusk with warm lantern light glowing from within",
+    "colors": "rich earth tones, deep greens, and golden accents",
+    "composition": "wide angle view showing the entire structure nestled in an ancient oak tree",
+    "details": "spiral staircases wrapping around branches, stained glass windows, floating books, and magical fireflies providing ambient illumination"
+}

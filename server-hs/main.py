@@ -1,4 +1,4 @@
-from flask import Flask, request, Response, jsonify
+from flask import Flask, Response
 from flask_cors import CORS
 
 # Init Flask
@@ -10,9 +10,8 @@ CORS(app)
 #
 DEFAULT_MODEL = "llama3.2"
 
-# Routes
+# Helper
 #
-
 from chat import chat
 import queue
 import threading
@@ -41,6 +40,8 @@ def generate_response(messages, chat):
 
     return Response(generate(), mimetype='text/event-stream')
 
+# Routes
+#
 @app.route('/api/chat', methods=['POST'])
 def api_chat():
 
@@ -48,7 +49,6 @@ def api_chat():
     messages = data.get("messages", [])
     #model = data.get("model", DEFAULT_MODEL)
     #stream = data.get("stream", True)
-
     return generate_response(messages, chat)
 
 test = """
